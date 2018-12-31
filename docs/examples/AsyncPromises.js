@@ -32,7 +32,11 @@ export default class WithPromises extends Component<*, State> {
   };
   render() {
     return (
-      <AsyncSelect cacheOptions defaultOptions loadOptions={promiseOptions} />
+      <AsyncSelect
+        cacheOptions
+        defaultOptions
+        loadOptions={promiseOptions}
+      />
     );
   }
 }

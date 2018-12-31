@@ -8,6 +8,7 @@ import {
   AsyncCallbacks,
   AsyncMulti,
   AsyncPromises,
+  AsyncPagination
 } from '../../examples';
 
 
@@ -52,6 +53,16 @@ export default function Async() {
         raw={require('!!raw-loader!../../examples/AsyncPromises.js')}
       >
         <AsyncPromises />
+      </ExampleWrapper>
+    )}
+
+    ${(
+      <ExampleWrapper
+        label="Pagination"
+        urlPath="docs/examples/AsyncPagination.js"
+        raw={require('!!raw-loader!../../examples/AsyncPagination.js')}
+      >
+        <AsyncPagination />
       </ExampleWrapper>
     )}
 

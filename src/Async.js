@@ -16,6 +16,7 @@ export type AsyncProps = {
   /* If cacheOptions is truthy, then the loaded data will be cached. The cache
      will remain until `cacheOptions` changes value. */
   cacheOptions: any,
+  loadOptionsPagination: (string, (OptionsType) => void, currentPage: number) => Promise<*> | void
 };
 
 export type Props = SelectProps & AsyncProps;
@@ -32,6 +33,7 @@ type State = {
   loadedInputValue?: string,
   loadedOptions: OptionsType,
   passEmptyOptions: boolean,
+  currentPage: number
 };
 
 export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
@@ -41,8 +43,9 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
     lastRequest: {};
     mounted: boolean = false;
     optionsCache: { [string]: OptionsType } = {};
+
     constructor(props: Props) {
-      super();
+      super(props);
       this.state = {
         defaultOptions: Array.isArray(props.defaultOptions)
           ? props.defaultOptions
@@ -51,8 +54,10 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
         isLoading: props.defaultOptions === true ? true : false,
         loadedOptions: [],
         passEmptyOptions: false,
+        currentPage: 1
       };
     }
+
     componentDidMount() {
       this.mounted = true;
       const { defaultOptions } = this.props;
@@ -65,6 +70,7 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
         });
       }
     }
+
     componentWillReceiveProps(nextProps: Props) {
       // if the cacheOptions prop changes, clear the cache
       if (nextProps.cacheOptions !== this.props.cacheOptions) {
@@ -79,23 +85,72 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
       }
 
     }
+
     componentWillUnmount() {
       this.mounted = false;
     }
+
+    incrementPage = () => {
+      this.setState({
+        currentPage: this.state.currentPage + 1
+      });
+    }
+
+    decrementPage = () => {
+      this.setState({
+        currentPage: this.state.currentPage - 1
+      });
+    }
+
+    resetPage = () => {
+      this.setState({
+        currentPage: 1
+      });
+    }
+
+    menuHitBottom = () => {
+      this.incrementPage();
+      this.loadOptions(this.state.inputValue, options => {
+        if (!this.mounted) return;
+        const optionsKey = this.state.inputValue && this.state.loadedInputValue ? 'loadedOptions' : 'defaultOptions';
+        const newState = {
+          isLoading: false,
+          passEmptyOptions: false,
+          [optionsKey]: options || []
+        };
+        // newState[optionsKey] = options || [];
+        this.setState(newState);
+      });
+    }
+
     focus() {
       this.select.focus();
     }
+
     blur() {
       this.select.blur();
     }
+
     loadOptions(inputValue: string, callback: (?Array<*>) => void) {
-      const { loadOptions } = this.props;
-      if (!loadOptions) return callback();
-      const loader = loadOptions(inputValue, callback);
+      const { loadOptions, loadOptionsPagination } = this.props;
+      let loader;
+      if (!!loadOptions) {
+        loader = loadOptions(inputValue, callback);
+      } else if (!!loadOptionsPagination) {
+        loader = loadOptionsPagination(inputValue, callback, this.state.currentPage);
+      } else {
+        return callback();
+      }
       if (loader && typeof loader.then === 'function') {
         loader.then(callback, () => callback());
       }
+      // if (!loadOptions) return callback();
+      // const loader = loadOptions(inputValue, callback);
+      // if (loader && typeof loader.then === 'function') {
+      //   loader.then(callback, () => callback());
+      // }
     }
+
     handleInputChange = (newValue: string, actionMeta: InputActionMeta) => {
       const { cacheOptions, onInputChange } = this.props;
       // TODO
@@ -160,6 +215,7 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
       const options = passEmptyOptions
         ? []
         : inputValue && loadedInputValue ? loadedOptions : defaultOptions || [];
+      console.log(options);
       return (
         // $FlowFixMe
         <SelectComponent
@@ -171,6 +227,7 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
           options={options}
           isLoading={isLoading}
           onInputChange={this.handleInputChange}
+          onMenuScrollToBottom={this.menuHitBottom}
         />
       );
     }
