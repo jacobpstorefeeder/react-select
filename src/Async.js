@@ -33,7 +33,8 @@ type State = {
   loadedInputValue?: string,
   loadedOptions: OptionsType,
   passEmptyOptions: boolean,
-  currentPage: number
+  currentPage: number,
+  paginationLoadedMoreResults: boolean
 };
 
 export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
@@ -54,7 +55,8 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
         isLoading: props.defaultOptions === true ? true : false,
         loadedOptions: [],
         passEmptyOptions: false,
-        currentPage: 1
+        currentPage: 1,
+        paginationLoadedMoreResults: false
       };
     }
 
@@ -112,13 +114,12 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
       this.incrementPage();
       this.loadOptions(this.state.inputValue, options => {
         if (!this.mounted) return;
-        const optionsKey = this.state.inputValue && this.state.loadedInputValue ? 'loadedOptions' : 'defaultOptions';
         const newState = {
           isLoading: false,
           passEmptyOptions: false,
-          [optionsKey]: options || []
+          loadedOptions: options || [],
+          paginationLoadedMoreResults: true
         };
-        // newState[optionsKey] = options || [];
         this.setState(newState);
       });
     }
@@ -163,6 +164,7 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
           loadedOptions: [],
           isLoading: false,
           passEmptyOptions: false,
+          paginationLoadedMoreResults: false
         });
         return;
       }
@@ -202,20 +204,43 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
       }
       return inputValue;
     };
-    render() {
-      const { loadOptions, ...props } = this.props;
+
+    clearStoredResults = () => {
+      console.log('clearing stored results');
+      this.setState({
+        loadedOptions: [],
+        paginationLoadedMoreResults: false
+      });
+    }
+
+    getOptions = () => {
       const {
         defaultOptions,
         inputValue,
-        isLoading,
         loadedInputValue,
         loadedOptions,
         passEmptyOptions,
+        paginationLoadedMoreResults
       } = this.state;
-      const options = passEmptyOptions
-        ? []
-        : inputValue && loadedInputValue ? loadedOptions : defaultOptions || [];
-      console.log(options);
+
+      switch(true) {
+        case passEmptyOptions: return [];
+        case inputValue && loadedInputValue:
+        case paginationLoadedMoreResults: return loadedOptions;
+        default: return defaultOptions || [];
+      }
+    }
+
+    menuClosed = (propsMenuClosed: Function) => {
+      propsMenuClosed && propsMenuClosed();
+      this.clearStoredResults();
+      this.resetPage();
+    }
+
+    render() {
+      const { loadOptions, ...props } = this.props;
+      const { isLoading } = this.state;
+      const options = this.getOptions();
       return (
         // $FlowFixMe
         <SelectComponent
@@ -228,6 +253,7 @@ export const makeAsyncSelect = (SelectComponent: ComponentType<*>) =>
           isLoading={isLoading}
           onInputChange={this.handleInputChange}
           onMenuScrollToBottom={this.menuHitBottom}
+          onMenuClose={this.menuClosed.bind(this, this.props.onMenuClose)}
         />
       );
     }
