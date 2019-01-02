@@ -996,12 +996,22 @@ export default class Select extends Component<Props, State> {
       document.removeEventListener('touchend', this.onTouchEnd);
     }
   }
-  onTouchStart = ({ touches: [touch] }: TouchEvent) => {
+  onTouchStart = ({ touches }: TouchEvent) => {
+    const touch = touches.item(0);
+    if (!touch) {
+      return;
+    }
+    
     this.initialTouchX = touch.clientX;
     this.initialTouchY = touch.clientY;
     this.userIsDragging = false;
   };
-  onTouchMove = ({ touches: [touch] }: TouchEvent) => {
+  onTouchMove = ({ touches }: TouchEvent) => {
+    const touch = touches.item(0);
+    if (!touch) {
+      return;
+    }
+
     const deltaX = Math.abs(touch.clientX - this.initialTouchX);
     const deltaY = Math.abs(touch.clientY - this.initialTouchY);
     const moveThreshold = 5;
@@ -1158,6 +1168,8 @@ export default class Select extends Component<Props, State> {
         }
         break;
       case 'Tab':
+        if (isComposing) return;
+
         if (
           event.shiftKey ||
           !menuIsOpen ||
@@ -1391,7 +1403,7 @@ export default class Select extends Component<Props, State> {
       'aria-labelledby': this.props['aria-labelledby'],
     };
 
-    const { cx, theme } = this.commonProps;
+    const { cx, theme, selectProps } = this.commonProps;
 
     return (
       <Input
@@ -1407,6 +1419,7 @@ export default class Select extends Component<Props, State> {
         onBlur={this.onInputBlur}
         onChange={this.handleInputChange}
         onFocus={this.onInputFocus}
+        selectProps={selectProps}
         spellCheck="false"
         tabIndex={tabIndex}
         theme={theme}
@@ -1776,7 +1789,7 @@ export default class Select extends Component<Props, State> {
       ValueContainer,
     } = this.components;
 
-    const { className, id, isDisabled } = this.props;
+    const { className, id, isDisabled, menuIsOpen } = this.props;
     const { isFocused } = this.state;
 
     const commonProps = (this.commonProps = this.getCommonProps());
@@ -1802,6 +1815,7 @@ export default class Select extends Component<Props, State> {
           }}
           isDisabled={isDisabled}
           isFocused={isFocused}
+          menuIsOpen={menuIsOpen}
         >
           <ValueContainer {...commonProps} isDisabled={isDisabled}>
             {this.renderPlaceholderOrValue()}
