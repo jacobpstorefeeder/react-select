@@ -244,7 +244,9 @@ export type Props = {
   /* The value of the select; reflected by the selected option */
   value: ValueType,
   /* A CSP Nonce which will be used in injected style sheets */
-  nonce?: string
+  nonce?: string,
+  /* Whether or not a menu item should be focused upon opening the menu */
+  shouldFocusOnOpen: boolean
 };
 
 export const defaultProps = {
@@ -285,6 +287,7 @@ export const defaultProps = {
   styles: {},
   tabIndex: '0',
   tabSelectsValue: true,
+  shouldFocusOnOpen: true
 };
 
 type MenuOptions = {
@@ -487,25 +490,28 @@ export default class Select extends Component<Props, State> {
 
   openMenu(focusOption: 'first' | 'last') {
     const { menuOptions, selectValue } = this.state;
-    const { isMulti } = this.props;
-    let openAtIndex =
-      focusOption === 'first' ? 0 : menuOptions.focusable.length - 1;
+    const { isMulti, shouldFocusOnOpen } = this.props;
+    const newState = {};
+    let openAtIndex;
+    if (shouldFocusOnOpen) {
+      openAtIndex = focusOption === 'first' ? 0 : menuOptions.focusable.length - 1;
 
-    if (!isMulti) {
-      const selectedIndex = menuOptions.focusable.indexOf(selectValue[0]);
-      if (selectedIndex > -1) {
-        openAtIndex = selectedIndex;
+      if (!isMulti) {
+        const selectedIndex = menuOptions.focusable.indexOf(selectValue[0]);
+        if (selectedIndex > -1) {
+          openAtIndex = selectedIndex;
+        }
       }
+      newState.focusedOption = menuOptions.focusable[openAtIndex];
     }
 
     this.scrollToFocusedOptionOnUpdate = true;
     this.inputIsHiddenAfterUpdate = false;
 
     this.onMenuOpen();
-    this.setState({
-      focusedValue: null,
-      focusedOption: menuOptions.focusable[openAtIndex],
-    });
+
+    newState.focusedValue =  null;
+    this.setState(newState);
 
     this.announceAriaLiveContext({ event: 'menu' });
   }
@@ -1001,7 +1007,7 @@ export default class Select extends Component<Props, State> {
     if (!touch) {
       return;
     }
-    
+
     this.initialTouchX = touch.clientX;
     this.initialTouchY = touch.clientY;
     this.userIsDragging = false;
