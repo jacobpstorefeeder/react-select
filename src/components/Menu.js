@@ -39,7 +39,7 @@ type PlacementArgs = {
   maxHeight: number,
   menuEl: ElementRef<*>,
   minHeight: number,
-  placement: 'bottom' | 'top' | 'auto',
+  placement: 'bottom' | 'top' | 'auto' | 'autoFlip',
   shouldScroll: boolean,
   isFixedPosition: boolean,
   theme: Theme,
@@ -149,6 +149,14 @@ export function getMenuPlacement({
         return { placement: 'bottom', maxHeight };
       }
       break;
+    case 'autoFlip':
+      // menu will fit
+      if (viewSpaceBelow >= menuHeight) {
+        return { placement: 'bottom', maxHeight };
+      } else {
+      // menu won't fit so needs to be flipped
+        return { placement: 'top', maxHeight: maxHeight };
+      }
     case 'top':
       // 1: the menu will fit, do nothing
       if (viewSpaceAbove >= menuHeight) {

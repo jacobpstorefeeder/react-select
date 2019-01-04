@@ -493,7 +493,7 @@ export default class Select extends Component<Props, State> {
     const { isMulti, shouldFocusOnOpen } = this.props;
     const newState = {};
     let openAtIndex;
-    if(shouldFocusOnOpen) {
+    if (shouldFocusOnOpen) {
       openAtIndex = focusOption === 'first' ? 0 : menuOptions.focusable.length - 1;
 
       if (!isMulti) {

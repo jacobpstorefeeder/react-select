@@ -33,6 +33,7 @@ export default class AsyncPagination extends Component<*, State> {
         cacheOptions
         defaultOptions
         loadOptionsPagination={promiseOptions}
+        menuPlacement="autoFlip"
       />
     );
   }
